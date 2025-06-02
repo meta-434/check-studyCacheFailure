@@ -2,3 +2,4 @@
 - scheduled task to monitor cache failure
 - uses `mssql` to query cache status
 - uses `nodemailer` to send email alerts via SMTP if cache fails
+- requires gmail application password to use specified account

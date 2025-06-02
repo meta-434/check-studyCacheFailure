@@ -39,9 +39,9 @@ async function getStudyCacheFailures() {
 async function sendEmail(body) {
   return transporter
     .sendMail({
-      from: "Example app <no-reply@example.com>",
-      to: "alex.hapgood@flexibleinformatics.com",
-      subject: "entries found in study_cache_failure",
+      from: "EncaptureMD <no-reply@encapturemd.com>",
+      to: "jon.bishop@encapturemd.com",
+      subject: "Entries found in study_cache_failure table",
       text: `Failure(s) found in table dbo.study_cache_failure;\n ${JSON.stringify(body, null, 2)}`,
     })
     .then((info) => {
@@ -53,6 +53,4 @@ async function sendEmail(body) {
     });
 }
 
-getStudyCacheFailures()
-  .then((res) => sendEmail(res))
-  .then((res) => console.log("result: ", res)); 
+getStudyCacheFailures().then((res) => sendEmail(res));
