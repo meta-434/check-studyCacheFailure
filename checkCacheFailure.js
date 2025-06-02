@@ -6,7 +6,7 @@ const sqlConfig = {
   user: process.env.DB_USER,
   password: process.env.DB_PASS,
   server: process.env.DB_SERVER,
-  database: process.env.DB_NAME, // optional, but recommended
+  database: process.env.DB_NAME,
   options: {
     encrypt: false, // unless you're using SSL
     trustServerCertificate: true,
