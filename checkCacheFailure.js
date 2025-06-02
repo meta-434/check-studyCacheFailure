@@ -1,5 +1,6 @@
 require("dotenv").config();
 const sql = require("mssql");
+const nodemailer = require("nodemailer");
 
 const sqlConfig = {
   user: process.env.DB_USER,
@@ -11,6 +12,14 @@ const sqlConfig = {
     trustServerCertificate: true,
   },
 };
+
+const transporter = nodemailer.createTransport({
+  service: "Gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 
 async function getStudyCacheFailures() {
   try {
@@ -27,4 +36,23 @@ async function getStudyCacheFailures() {
   }
 }
 
-getStudyCacheFailures().then((res) => console.log("result: ", res));
+async function sendEmail(body) {
+  return transporter
+    .sendMail({
+      from: "Example app <no-reply@example.com>",
+      to: "alex.hapgood@flexibleinformatics.com",
+      subject: "entries found in study_cache_failure",
+      text: `Failure(s) found in table dbo.study_cache_failure;\n ${JSON.stringify(body, null, 2)}`,
+    })
+    .then((info) => {
+      return `Message sent: ${info.messageId}`;
+    })
+    .catch((err) => {
+      console.error("Error sending email:", err);
+      throw err;
+    });
+}
+
+getStudyCacheFailures()
+  .then((res) => sendEmail(res))
+  .then((res) => console.log("result: ", res)); 
