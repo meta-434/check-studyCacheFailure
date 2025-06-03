@@ -54,7 +54,7 @@ async function sendEmail(body) {
 }
 
 getStudyCacheFailures().then((res) => {
-  console.log(res.length);
+  // console.log(res.length);
   if (res.length > 0) {
     sendEmail(res);
   } else {
