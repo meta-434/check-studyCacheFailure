@@ -26,7 +26,7 @@ async function getStudyCacheFailures() {
     const pool = await sql.connect(sqlConfig);
     const result = await pool
       .request()
-      .query("SELECT * FROM dbo.study_cache_failure");
+      .query("SELECT * FROM study_cache_failure");
     await sql.close();
     return result.recordset;
   } catch (err) {
