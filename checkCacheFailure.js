@@ -28,7 +28,7 @@ async function getStudyCacheFailures() {
       .request()
       .query("SELECT * FROM dbo.study_cache_failure");
     await sql.close();
-    return result.recordset; // ✅ This is the actual data (an array of rows)
+    return result.recordset;
   } catch (err) {
     console.error("Database query failed:", err);
     await sql.close();
@@ -40,7 +40,7 @@ async function sendEmail(body) {
   return transporter
     .sendMail({
       from: "EncaptureMD <no-reply@encapturemd.com>",
-      to: "jon.bishop@encapturemd.com",
+      to: process.env.RECIPIENT_EMAIL,
       subject: "Entries found in study_cache_failure table",
       text: `Failure(s) found in table dbo.study_cache_failure;\n ${JSON.stringify(body, null, 2)}`,
     })
