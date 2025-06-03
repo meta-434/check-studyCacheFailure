@@ -53,4 +53,11 @@ async function sendEmail(body) {
     });
 }
 
-getStudyCacheFailures().then((res) => sendEmail(res));
+getStudyCacheFailures().then((res) => {
+  console.log(res.length);
+  if (res.length > 0) {
+    sendEmail(res);
+  } else {
+    Promise.resolve();
+  }
+});
