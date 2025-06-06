@@ -64,7 +64,7 @@ function hashEntry(entry) {
   return crypto.createHash("sha256").update(hashInput).digest("hex");
 }
 
-function readCrossReference() {
+async function readCrossReference() {
   return fs
     .readFile(CROSS_REF_FILE, "utf8")
     .then((data) => JSON.parse(data))
@@ -88,4 +88,30 @@ function writeCrossReference(refs) {
 //   }
 // });
 
-getStudyCacheFailures().then((res) => crossReferenceResults(res));
+function main() {
+  let crossRef;
+
+  readCrossReference()
+    .then((res) => {
+      crossRef = res;
+      console.log("crossRef: ", crossRef);
+      return getStudyCacheFailures();
+    })
+    .then((dbRes) => {
+      const newEntries = dbRes.filter((e) => {
+        const hash = hashEntry(e);
+        return !crossRef.includes(hash);
+        // filter adds vals where cb fn evals true, so return includes(hash) expr needs to eval to true if new val
+      });
+      if (newEntries.length === 0) return null; // no new entries
+
+      return sendEmail(newEntries).then(() => {
+        const newHashes = newEntries.map((e) => hashEntry(e));
+        const newCrossRef = [...new Set([...crossRef, ...newHashes])];
+        return writeCrossReference(newCrossRef);
+      });
+    })
+    .catch((err) => console.error("script failed:", err));
+}
+
+main();
