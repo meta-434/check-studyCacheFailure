@@ -1,6 +1,11 @@
 require("dotenv").config();
+const path = require("path");
+const crypto = require("crypto");
+const fs = require("node:fs/promises");
 const sql = require("mssql");
 const nodemailer = require("nodemailer");
+
+const CROSS_REF_FILE = path.join(__dirname, "cross_reference.json");
 
 const sqlConfig = {
   user: process.env.DB_USER,
@@ -53,11 +58,34 @@ async function sendEmail(body) {
     });
 }
 
-getStudyCacheFailures().then((res) => {
-  // console.log(res.length);
-  if (res.length > 0) {
-    sendEmail(res);
-  } else {
-    Promise.resolve();
-  }
-});
+// adding date makes this unique no matter what, even if the error is identical and has multiple identical entries in DB (except TS)
+function hashEntry(entry) {
+  const hashInput = `${entry.medical_study_id}-${entry.message}-${entry.corporate_entity_id}-${entry.username}-${entry.date}`;
+  return crypto.createHash("sha256").update(hashInput).digest("hex");
+}
+
+function readCrossReference() {
+  return fs
+    .readFile(CROSS_REF_FILE, "utf8")
+    .then((data) => JSON.parse(data))
+    .catch((err) => {
+      // nonexistent file
+      if (err.code === "ENOENT") return [];
+      throw err;
+    });
+}
+
+function writeCrossReference(refs) {
+  const content = JSON.stringify(refs, null, 2);
+  return fs.writeFile(CROSS_REF_FILE, content, "utf8");
+}
+// getStudyCacheFailures().then((res) => {
+//   // console.log(res.length);
+//   if (res.length > 0) {
+//     sendEmail(res);
+//   } else {
+//     Promise.resolve();
+//   }
+// });
+
+getStudyCacheFailures().then((res) => crossReferenceResults(res));
