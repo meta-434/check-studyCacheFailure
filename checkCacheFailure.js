@@ -26,6 +26,14 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+/**
+ * Queries the MSSQL database for all entries in the `study_cache_failure` table.
+ *
+ * Uses the 'sqlConfig' object for connection details and returns the full result set.
+ * Closes the connection after querying. Throws on connection or query error.
+ *
+ * @returns {Promise<Object[]>} A promise that resolves to an array of result objects from the table.
+ */
 async function getStudyCacheFailures() {
   try {
     const pool = await sql.connect(sqlConfig);
@@ -41,6 +49,15 @@ async function getStudyCacheFailures() {
   }
 }
 
+/**
+ * Sends an email notification with the provided database results.
+ *
+ * Uses preconfigured transporter and environment-based recipient address. The message body is
+ * stringified for readability. Logs and throws on failure.
+ *
+ * @param {Object[]} body - Array of result objects from the DB query.
+ * @returns {Promise<string>} A promise that resolves to a confirmation message (messageID).
+ */
 async function sendEmail(body) {
   return transporter
     .sendMail({
@@ -58,12 +75,35 @@ async function sendEmail(body) {
     });
 }
 
-// adding date makes this unique no matter what, even if the error is identical and has multiple identical entries in DB (except TS)
+/**
+ * Generates a SHA-256 hash for a database error entry.
+ *
+ * The hash includes the timestamp (`date` field), ensuring uniqueness
+ * even if identical error records exist in the database with different times.
+ *
+ * @param {Object} entry - A database record containing error details.
+ * @param {string} entry.medical_study_id - The ID of the medical study.
+ * @param {string} entry.message - The failure message.
+ * @param {string} entry.corporate_entity_id - The corporate entity identifier.
+ * @param {string} entry.username - The username responsible for the operation.
+ * @param {string} entry.date - The ISO timestamp of the error event.
+ *
+ * @returns {string} A SHA-256 hash uniquely representing the error entry.
+ *
+ * @see getStudyCacheFailures
+ */
 function hashEntry(entry) {
   const hashInput = `${entry.medical_study_id}-${entry.message}-${entry.corporate_entity_id}-${entry.username}-${entry.date}`;
   return crypto.createHash("sha256").update(hashInput).digest("hex");
 }
 
+/**
+ * Reads the cross_reference.json file and parses it into an array of entry hashes.
+ *
+ * If the file does not exist, resolves to an empty array. Throws on other I/O or JSON errors.
+ *
+ * @returns {Promise<string[]>} A promise that resolves to an array of SHA-256 hashes.
+ */
 async function readCrossReference() {
   return fs
     .readFile(CROSS_REF_FILE, "utf8")
@@ -79,14 +119,6 @@ function writeCrossReference(refs) {
   const content = JSON.stringify(refs, null, 2);
   return fs.writeFile(CROSS_REF_FILE, content, "utf8");
 }
-// getStudyCacheFailures().then((res) => {
-//   // console.log(res.length);
-//   if (res.length > 0) {
-//     sendEmail(res);
-//   } else {
-//     Promise.resolve();
-//   }
-// });
 
 function main() {
   let crossRef;
